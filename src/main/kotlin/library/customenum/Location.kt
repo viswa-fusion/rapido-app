@@ -4,7 +4,8 @@ package library.customenum
 enum class Location {
     GU, VA, MU, PE, TM, CH, PA, PM, CIA;
 
-    private val map = mutableMapOf<Location, Int>()
+    var map = mutableMapOf<Location, Int>()
+    private set
 
     fun addDestination(nearByLocation: Location, distanceBetween: Int) {
         map[nearByLocation] = distanceBetween

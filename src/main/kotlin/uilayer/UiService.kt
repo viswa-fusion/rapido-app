@@ -10,17 +10,15 @@ import modules.*
 object UiService {
     fun signUp() {
         displaySelectUserMenu()
-        val response: DbResponse = when (InputHandler.getInt(1, 2)) {
+        val response: DbResponse =
+        when (InputHandler.getIntWithMinusOne(1, 2)) {
             1 -> SignUpPage.displayPassengerSignUp()
             2 -> SignUpPage.displayDriverSignUp()
-            else -> DbResponse.SignupFailed
+            else-> DbResponse.SignupFailed
         }
         if (response.getResponse() == 200) {
             displayResponse(response, TextColor.GREEN)
             if (InputHandler.getString("enter 0 to login or press any key to exit", includeNull = true) == "0") signIn()
-        } else {
-            displayResponse(response, TextColor.RED)
-            closeApp()
         }
     }
 
@@ -70,7 +68,8 @@ object UiService {
                     when (InputHandler.getInt(1, 4)) {
                         1 -> {
                             val driverCurrentLocation = RidePage.gatherLocation()
-                            DbService.getNearByAvailableRide(driverCurrentLocation)
+                            val result = DbService.getNearByAvailableRide(driverCurrentLocation)
+                            displayRides(result)
                         }
 
                         4 -> if (InputHandler.getString(
@@ -82,6 +81,7 @@ object UiService {
                 }
             }
         }
+        colorCoatedMessage("successfully Logged out", TextColor.GREEN)
     }
 
 
@@ -143,5 +143,22 @@ object UiService {
             }
         }
     }
-
+    fun displayRides(rides : List<Ride>){
+        colorCoatedMessage(
+            """
+                +----------------------------+
+                | Available Ride             |
+                +---------------------------------------------------------------------------------------+
+                | Passenger Name             | Pickup Location      | Drop Location        | Price      |
+                +----------------------------+----------------------+----------------------+------------+
+            """.trimIndent(), TextColor.PEACH
+        )
+        rides.forEach{
+            colorCoatedMessage("""
+        | %-26s | %-20s | %-20s | ${TextColor.GREEN}₹%-9.2f${TextColor.PEACH} |                                                   
+        |____________________________|______________________|______________________|____________|
+    """.trimIndent().format(it.passenger?.username, it.pickup_location, it.drop_location, it.total_charge), TextColor.PEACH
+            )
+        }
+    }
 }

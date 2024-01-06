@@ -1,12 +1,13 @@
 package database.sqldatabase
 
 import backend.UtilityFunction
-import backend.castToLocation
+import backend.UtilityFunction.Companion.castToLocation
 import database.DbConnection
 import database.DbService
 import database.dao.RideDao
 import library.DbResponse
 import library.customenum.DbTables
+import library.customenum.Location
 import modules.Ride
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -18,10 +19,9 @@ class RideTable : RideDao {
 
     override fun insertRide(ride: Ride, passengerId: Int): DbResponse {
         query =
-            "insert into ${DbTables.rides.name} (`passenger_id`,`driver_id`,`pickup_location`,`drop_location`,`start_time`,`end_time`,`status`,`total_charge`)value(?,?,?,?,?,?,?,?)"
+            "insert into ${DbTables.rides.name} (`passenger_id`,`pickup_location`,`drop_location`,`status`,`total_charge`)value(?,?,?,?,?)"
         connection.prepareStatement(query).use {
             it.setInt(1, passengerId)
-            it.setInt(2, 2)
             it.setString(2, ride.pickup_location.toString())
             it.setString(3, ride.drop_location.toString())
             it.setString(4, ride.status.toString())
@@ -60,7 +60,7 @@ class RideTable : RideDao {
             return Ride(
                 DbService.getPassenger(resultSet.getInt("passenger_id")),
                 DbService.getDriver(resultSet.getInt("driver_id")),
-                castToLocation(resultSet.getString("pickup_location"))!!,
+                 castToLocation(resultSet.getString("pickup_location"))!!,
                 castToLocation(resultSet.getString("drop_location"))!!,
                 resultSet.getString("start_time"),
                 resultSet.getString("end_time"),
@@ -69,5 +69,29 @@ class RideTable : RideDao {
             )
         }
         return null
+    }
+    override fun getRideWithPickUpLocation(nearLocation: MutableMap<Location, Int>): List<Ride> {
+
+        val listOfRide = ArrayList<Ride>()
+        var ride: Ride
+        nearLocation.forEach{(location,_)->
+            query = "SELECT * FROM ${DbTables.rides} WHERE pickup_location ='${location.name}'"
+            val preparedStatement: PreparedStatement = connection.prepareStatement(query)
+            val resultSet: ResultSet = preparedStatement.executeQuery()
+            while (resultSet.next()) {
+                ride= Ride(
+                    DbService.getPassenger(resultSet.getInt("passenger_id")),
+                    DbService.getDriver(resultSet.getInt("driver_id")),
+                    castToLocation(resultSet.getString("pickup_location"))!!,
+                    castToLocation(resultSet.getString("drop_location"))!!,
+                    resultSet.getString("start_time"),
+                    resultSet.getString("end_time"),
+                    UtilityFunction.castToRideStatus(resultSet.getString("status"))!!,
+                    resultSet.getDouble("total_charge"),
+                )
+                listOfRide.add(ride)
+            }
+        }
+        return listOfRide
     }
 }

@@ -10,7 +10,7 @@ class UtilityFunction private constructor(){
             Location.GU.addDestination(Location.VA, 10)
             Location.VA.addDestination(Location.MU, 2)
             Location.VA.addDestination(Location.PE, 7)
-            Location.MU.addDestination(Location.TM, 2)
+            Location.MU.addDestination(Location.TM, 20)
             Location.PE.addDestination(Location.TM, 8)
             Location.TM.addDestination(Location.CH, 3)
             Location.CH.addDestination(Location.PA, 6)

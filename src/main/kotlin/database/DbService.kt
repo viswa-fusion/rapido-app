@@ -109,9 +109,9 @@ object DbService {
         return AuthenticationResponse.InvalidUsername
     }
 
-    fun getNearByAvailableRide(RadiusInKiloMeter: Location): List<Ride> {
-
-        return Read.getNearByAvailableRide(RadiusInKiloMeter)
+    fun getNearByAvailableRide(currentLocation: Location): List<Ride> {
+        val nearLocation = currentLocation.map
+        return rideTable.getRideWithPickUpLocation(nearLocation)
     }
 
     fun getAadhaar(id: Int): Aadhaar {

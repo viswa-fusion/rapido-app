@@ -1,10 +1,9 @@
 package library
 
-import backend.castToLocation
+import backend.UtilityFunction.Companion.castToLocation
 import library.OutputHandler.colorCoatedMessage
 import library.customenum.*
 import library.customenum.TextColor
-import uilayer.UiService
 
 
 object InputHandler {
@@ -18,7 +17,7 @@ object InputHandler {
         println(message)
         do {
             num = readLine()?.toIntOrNull()
-        } while ((num == null || (num !in min..max && num != -1)).also { if (it) colorCoatedMessage(retryMessage, TextColor.RED) })
+        } while ((num == null || num !in min..max ).also { if (it) colorCoatedMessage(retryMessage, TextColor.RED) })
         return num!!
     }
 
@@ -125,6 +124,20 @@ object InputHandler {
         return longNum!!
     }
 
+    fun getIntWithMinusOne(
+        min: Int,
+        max: Int,
+        message: String = "enter your choice",
+        retryMessage: String = "invalid input try again..!"
+    ): Int {
+        var num: Int?
+        println(message)
+        do {
+            num = readLine()?.toIntOrNull()
+        } while ((num == null || (num !in min..max && num != -1)).also { if (it) colorCoatedMessage(retryMessage, TextColor.RED) })
+        return num!!
+    }
+
     fun getVehicleType(message: String): BikeType {
         var preferredVehicleType: BikeType?
         do {
@@ -145,7 +158,6 @@ object InputHandler {
     }
 
     fun getLocation(message: String = "enter your current location"): Location {
-        UiService.displayRideRotes()
         while (true) {
             val location = castToLocation(getString(2, message))
             if (location != null) return location

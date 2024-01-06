@@ -261,7 +261,10 @@ internal object Read {
     }
 
 
-    fun getNearByAvailableRide(radiusInKiloMeter: Location): List<Ride> {
+    fun getNearByAvailableRide(currentLocation: Location): List<Ride> {
+
+        val nearLocation = currentLocation.map
+
         return listOf<Ride>()
     }
 
