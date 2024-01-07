@@ -1,21 +1,21 @@
 package uilayer
 
-import base.*
+import backend.System
 import library.*
 import library.customenum.*
 import database.*
 import library.OutputHandler.colorCoatedMessage
-import modules.*
+import models.*
 
 object UiService {
     fun signUp() {
         displaySelectUserMenu()
         val response: DbResponse =
-        when (InputHandler.getIntWithMinusOne(1, 2)) {
-            1 -> SignUpPage.displayPassengerSignUp()
-            2 -> SignUpPage.displayDriverSignUp()
-            else-> DbResponse.SignupFailed
-        }
+            when (InputHandler.getIntWithMinusOne(1, 2)) {
+                1 -> SignUpPage.displayPassengerSignUp()
+                2 -> SignUpPage.displayDriverSignUp()
+                else -> DbResponse.SignupFailed
+            }
         if (response.getResponse() == 200) {
             displayResponse(response, TextColor.GREEN)
             if (InputHandler.getString("enter 0 to login or press any key to exit", includeNull = true) == "0") signIn()
@@ -24,8 +24,7 @@ object UiService {
 
     fun signIn() {
         var response: AuthenticationResponse
-        var dbResponse: DbResponse
-        var loggedUser: User
+        val loggedUser: User
         while (true) {
             response = SignInPage.displaySignInPage()
 
@@ -36,51 +35,7 @@ object UiService {
                 displayResponse(response, TextColor.YELLOW)
             }
         }
-
-        val loggedUserid = DbService.getLoggedUserId(loggedUser)
-        colorCoatedMessage("welcome ${loggedUser.name} 🙂", TextColor.CYAN) // printing of welcome message
-
-        when (loggedUser) {
-            is Passenger -> {
-                while (true) {
-                    displayPassengerMainMenu()
-                    when (InputHandler.getInt(1, 4)) {
-                        1 -> {
-                            val ride = BookingPage.gatherRideDataFromPassenger()
-                            dbResponse = loggedUser.bookRide(loggedUser, ride)
-                            displayResponse(dbResponse, TextColor.GREEN)
-                        }
-
-                        2 -> loggedUser.displayMyRide(loggedUserid, DbTables.passengers)
-
-                        4 -> if (InputHandler.getString(
-                                "enter 0 to confirm logout or press any key to cancel",
-                                includeNull = true
-                            ) == "0"
-                        ) break
-                    }
-                }
-            }
-
-            is Driver -> {
-                while (true) {
-                    displayDriverMainMenu()
-                    when (InputHandler.getInt(1, 4)) {
-                        1 -> {
-                            val driverCurrentLocation = RidePage.gatherLocation()
-                            val result = DbService.getNearByAvailableRide(driverCurrentLocation)
-                            displayRides(result)
-                        }
-
-                        4 -> if (InputHandler.getString(
-                                "enter 0 to confirm logout or press any key to cancel",
-                                includeNull = true
-                            ) == "0"
-                        ) break
-                    }
-                }
-            }
-        }
+        System.application(loggedUser)
         colorCoatedMessage("successfully Logged out", TextColor.GREEN)
     }
 
@@ -100,7 +55,7 @@ object UiService {
         )
     }
 
-    private fun displayPassengerMainMenu() {
+    fun displayPassengerMainMenu() {
         colorCoatedMessage(
             """1 -> Book Ride
                 |2 -> My Ride
@@ -110,7 +65,7 @@ object UiService {
         )
     }
 
-    private fun displayDriverMainMenu() {
+    fun displayDriverMainMenu() {
         colorCoatedMessage(
             """1 -> Check Available Ride
                 |2 -> My Ride
@@ -128,8 +83,14 @@ object UiService {
         colorCoatedMessage(UtilContent.welcomeMessage, TextColor.BLUE)
     }
 
-    fun displayMyRide(id: Int, table: DbTables) {
-        //println(DbService.getMyRide(id, table))
+    fun displayMyRide(id: Int, user: User) {
+        when (user) {
+            is Passenger -> {
+                println(DbService.getMyRide(id, DbTables.passengers))
+            }
+
+            is Driver -> {println("under development")}
+        }
     }
 
     fun displayResponse(ob: Any, textColor: TextColor) {
@@ -143,22 +104,27 @@ object UiService {
             }
         }
     }
-    fun displayRides(rides : List<Ride>){
+
+    fun displayAvailableRides(rides: List<Ride>): Int {
+        var id = 1
         colorCoatedMessage(
             """
-                +----------------------------+
-                | Available Ride             |
-                +---------------------------------------------------------------------------------------+
-                | Passenger Name             | Pickup Location      | Drop Location        | Price      |
-                +----------------------------+----------------------+----------------------+------------+
+                +---------------------------------+
+                |         Available Ride          |
+                +---------------------------------+----------------------------------------------------------+
+                | Id | Passenger Name             | Pickup Location      | Drop Location        | Price      |
+                +----+----------------------------+----------------------+----------------------+------------+
             """.trimIndent(), TextColor.PEACH
         )
-        rides.forEach{
-            colorCoatedMessage("""
-        | %-26s | %-20s | %-20s | ${TextColor.GREEN}₹%-9.2f${TextColor.PEACH} |                                                   
-        |____________________________|______________________|______________________|____________|
-    """.trimIndent().format(it.passenger?.username, it.pickup_location, it.drop_location, it.total_charge), TextColor.PEACH
+        rides.forEach {
+            colorCoatedMessage(
+                """
+        | %-2s | %-26s | %-20s | %-20s | ${TextColor.GREEN}₹%-9.2f${TextColor.PEACH} |                                                   
+        |____|____________________________|______________________|______________________|____________|
+    """.trimIndent().format(id++, it.passenger?.username, it.pickup_location, it.drop_location, it.total_charge),
+                TextColor.PEACH
             )
         }
+        return id
     }
 }

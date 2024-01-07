@@ -1,6 +1,6 @@
 package library
 
-import modules.User
+import models.User
 
 interface Response {
     fun getResponse(): Int

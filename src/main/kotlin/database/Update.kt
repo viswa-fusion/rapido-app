@@ -1,4 +1,0 @@
-package database
-
-class Update {
-}

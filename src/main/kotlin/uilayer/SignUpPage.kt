@@ -4,7 +4,8 @@ import database.DbService
 import library.*
 import library.OutputHandler.colorCoatedMessage
 import library.customenum.*
-import modules.*
+import models.*
+import modules.UserAccess
 
 internal object SignUpPage {
     private var age: Int? = null
@@ -38,7 +39,7 @@ internal object SignUpPage {
             )
         }
         val phone: Long = InputHandler.getLong(10, "Enter Mobile Number", "Enter valid mobile number..!")
-        return User(username, password, name, age!!, phone)
+        return User(username, password, name, age!!, phone, UserAccess())
     }
 
     fun displayPassengerSignUp(): DbResponse {

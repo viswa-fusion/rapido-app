@@ -1,36 +1,37 @@
 package database
 
+import database.dao.UserDbDao
 import database.sqldatabase.*
 import library.*
 import library.customenum.*
-import modules.*
-import modules.Driver
+import models.*
+import models.Driver
 import java.sql.*
 
 object DbService {
-    private val userTable = UserTable()
-    private val passengerTable = PassengerTable()
-    private val driverTable = DriverTable()
-    private val rideTable = RideTable()
-    private val aadhaarTable = AadhaarTable()
-    private val licenseTable = LicenseTable()
-    private val rcBookTable = RcBookTable()
-    private val bikeTable = BikeTable()
+    private val userDatabase :UserDbDao = UserDatabase()
+    private val passengerDatabase = PassengerDatabase()
+    private val driverDatabase = DriverDatabase()
+    private val rideDatabase = RideDatabase()
+    private val aadhaarDatabase = AadhaarDatabase()
+    private val licenseDatabase = LicenseDatabase()
+    private val rcBookDatabase = RcBookDatabase()
+    private val bikeDatabase = BikeDatabase()
 
     private fun addUser(user: User): Int {
-        return userTable.insertUser(user)
+        return userDatabase.insertUser(user)
     }
 
     fun getUser(userName: String): AuthenticationResponse {
-        return userTable.getUser(userName)
+        return userDatabase.getUser(userName)
     }
 
     fun getUser(id: Int): User {
-        return userTable.getUser(id)
+        return userDatabase.getUser(id)
     }
 
     fun getLoggedUser(response: AuthenticationResponse.UserLoggedIn): User {
-        return userTable.getUserType(response)
+        return userDatabase.getUserType(response)
     }
 
     //<-------------------------------------------------------------------------------------------------------->
@@ -39,7 +40,7 @@ object DbService {
         return try {
             val userId = addUser(passenger)
             val aadhaarId = addAadhaar(passenger.aadhaar)
-            passengerTable.insertPassenger(userId, aadhaarId, passenger.preferredVehicleType)
+            passengerDatabase.insertPassenger(userId, aadhaarId, passenger.preferredVehicleType)
             DbResponse.SuccessfullyCreated
         } catch (e: SQLException) {
             DbResponse.OperationUnsuccessful(e.message)
@@ -49,16 +50,16 @@ object DbService {
     //<-------------------------------------------------------------------------------------------------------->
 
     private fun addLicense(license: License): Int {
-        return licenseTable.insertLicense(license)
+        return licenseDatabase.insertLicense(license)
     }
 
     fun getLicense(id: Int): License {
-        return licenseTable.getLicense(id)
+        return licenseDatabase.getLicense(id)
     }
 
     //<-------------------------------------------------------------------------------------------------------->
     private fun addBike(bike: Bike): Int {
-        return bikeTable.insertBike(bike)
+        return bikeDatabase.insertBike(bike)
     }
 
     //<-------------------------------------------------------------------------------------------------------->
@@ -66,44 +67,44 @@ object DbService {
         val userId = addUser(driver)
         val licenseId = addLicense(driver.license)
         val bikeId = addBike(driver.bike)
-        return driverTable.insertDriver(userId, licenseId, bikeId)
+        return driverDatabase.insertDriver(userId, licenseId, bikeId)
     }
 
     //<-------------------------------------------------------------------------------------------------------->
     fun addNewRide(user : User, ride: Ride): DbResponse {
         val passengerId =getLoggedUserId(user)
-        return rideTable.insertRide(ride, passengerId)
+        return rideDatabase.insertRide(ride, passengerId)
     }
 
     fun getMyRide(id: Int, table: DbTables): Ride {
-        return rideTable.getMyRide(id, table)!!
+        return rideDatabase.getMyRide(id, table)!!
     }
     //<-------------------------------------------------------------------------------------------------------->
 
     private fun addAadhaar(aadhaar: Aadhaar): Int{
-        return aadhaarTable.insertAadhaar(aadhaar)
+        return aadhaarDatabase.insertAadhaar(aadhaar)
     }
 
     //<-------------------------------------------------------------------------------------------------------->
 
 
     fun getLoggedUserId(user: User): Int {
-        val userId = Read.getUserId(user)
+        val userId = userDatabase.getUserId(user)
         return when(user){
-            is Passenger -> Read.getPassengerId(userId)
-            is Driver -> Read.getDriverId(userId)
+            is Passenger -> passengerDatabase.getPassengerId(userId)
+            is Driver -> driverDatabase.getDriverId(userId)
             else -> throw SQLException("not a valid user")
         }
     }
 
     fun isUserNameExist(userName: String): Boolean {
 //      return isUsernameExist(username,"userCredential") || isUsernameExist(username,"bikerCredential")
-        return userTable.isUserNameExist(userName)
+        return userDatabase.isUserNameExist(userName)
     }
 
     fun isValidCredential(userName: String, password: String): AuthenticationResponse {
         if (isUserNameExist(userName))
-            return if (Read.checkPassword(userName, password)) {
+            return if (userDatabase.checkPassword(userName, password)) {
                 AuthenticationResponse.UserFound
             } else AuthenticationResponse.InvalidPassword
         return AuthenticationResponse.InvalidUsername
@@ -111,34 +112,50 @@ object DbService {
 
     fun getNearByAvailableRide(currentLocation: Location): List<Ride> {
         val nearLocation = currentLocation.map
-        return rideTable.getRideWithPickUpLocation(nearLocation)
+        nearLocation[currentLocation] = 0
+        val result = rideDatabase.getRideWithPickUpLocation(nearLocation)
+        result.forEach {
+            it.total_charge = convertToCommissionRate(it.total_charge)
+        }
+        return result
     }
-
+    private fun convertToCommissionRate(totalCharge: Double):Double{
+        val commissionPercentage = 20.0
+       return totalCharge - (totalCharge * (commissionPercentage/ 100.0))
+    }
     fun getAadhaar(id: Int): Aadhaar {
-        return Read.getAadhaar(id)
+        return aadhaarDatabase.getAadhaar(id)
     }
 
     fun getDriver(id: Int): Driver? {
-        return Read.getDriver(id)
+        return driverDatabase.getDriver(id)
     }
 
     fun getBike(id: Int): Bike {
-        return Read.getBike(id)
+        return bikeDatabase.getBike(id)
     }
 
     fun getRcBook(id: Int): RcBook {
-        return Read.getRcBook(id)
+        return rcBookDatabase.getRcBook(id)
     }
 
     fun insertRcBook(rcBook: RcBook): Int {
-        return Create.insertRcBook(rcBook)
+        return rcBookDatabase.insertRcBook(rcBook)
     }
 
     fun getPassenger(id: Int): Passenger {
-        return Read.getPassenger(id)
+        return passengerDatabase.getPassenger(id)
     }
 
     fun addRcBook(rcBook: RcBook): Int {
-        return rcBookTable.insertRcBook(rcBook)
+        return rcBookDatabase.insertRcBook(rcBook)
+    }
+
+    fun isLoggedUserHavaAnotherRide(loggedUserid: Int): Boolean {
+        return rideDatabase.checkUserHaveRide(loggedUserid)
+    }
+
+    fun acceptRide(ride: Ride): DbResponse {
+        return DbResponse.OperationUnsuccessful("function not created")
     }
 }

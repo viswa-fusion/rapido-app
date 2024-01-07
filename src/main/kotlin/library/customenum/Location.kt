@@ -1,41 +1,74 @@
 package library.customenum
 
+//                        |<--------> Mudichor(MU) <------>|                                   |<-----------> Pammal(PM)
+//Guduvancheri(GU) <--> Vandalur(VA)                   Tambaram(TM) <--> Chrompet(CH) <--> Pallavaram(PA) <--> InternationalAirport(CIA)
+//                        |<------> Perungalathur(PE) <--->|
 
-enum class Location {
-    GU, VA, MU, PE, TM, CH, PA, PM, CIA;
+enum class Location(val placeName: String) {
+    GU("Guduvancheri"),
+    VA("Vandalur"),
+    MU("Mudichor"),
+    PE("Perungalathur"),
+    TM("Tambaram"),
+    CH("Chrompet"),
+    PA("Pallavaram"),
+    PM("Pammal"),
+    CIA("ChennaiInternationalAirport");
 
     var map = mutableMapOf<Location, Int>()
-    private set
+        private set
 
     fun addDestination(nearByLocation: Location, distanceBetween: Int) {
         map[nearByLocation] = distanceBetween
         nearByLocation.map[this] = distanceBetween
     }
 
-    fun getShortestDistance(destination: Location): Int?{
+    fun getShortestDistance(destination: Location): Int? {
         val currentLocation = mutableListOf(this)
         val checkedLocation = mutableListOf<Location>()
         val measuredLocation = mutableMapOf<Location, Int>()
+        val previousLocation = mutableMapOf<Location, Location>()
 
         measuredLocation[this] = 0
 
-        while (currentLocation.isNotEmpty()){
+        while (currentLocation.isNotEmpty()) {
             val current = currentLocation.removeAt(0)
 
-            if(current == destination) return measuredLocation[current]
-            if(checkedLocation.contains(current)) continue
+            if (current == destination) {
+                val route = mutableListOf<Location>()
+                var backtrace = destination
+                while (backtrace != this) {
+                    route.add(backtrace)
+                    backtrace = previousLocation[backtrace]!!
+                }
+                route.add(this)
+                route.reversed().forEach{
+                    print("-> ${it.placeName}")
+                }
+                println()
+                return measuredLocation[current]
+            }
+            if (checkedLocation.contains(current)) continue
 
             checkedLocation.add(current)
 
-            for ((nearLocation,distance) in current.map){
-                val newMeasuredDistance = measuredLocation[current]!!+distance
-                if(newMeasuredDistance < measuredLocation.getOrDefault(nearLocation,Int.MAX_VALUE)){
-                        measuredLocation[nearLocation] = newMeasuredDistance
+            for ((nearLocation, distance) in current.map) {
+                val newMeasuredDistance = measuredLocation[current]!! + distance
+                if (newMeasuredDistance < measuredLocation.getOrDefault(nearLocation, Int.MAX_VALUE)) {
+                    measuredLocation[nearLocation] = newMeasuredDistance
+                    previousLocation[nearLocation] = current
                     currentLocation.add(nearLocation)
                 }
             }
         }
         return null
+    }
+
+    companion object {
+        fun calculateTotalCharge(kilometer: Int): Double {
+            val chargerPerKiloMeter = 10.0
+            return kilometer * chargerPerKiloMeter
+        }
     }
 //    fun getNearLocation(): List<Location> {
 //        val currentLocation = this

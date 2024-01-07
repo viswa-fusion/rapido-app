@@ -41,6 +41,7 @@ class UtilityFunction private constructor(){
                 RideStatus.RIDE_START.name -> RideStatus.RIDE_START
                 RideStatus.RIDE_END.name -> RideStatus.RIDE_END
                 RideStatus.PAYMENT_PENDING.name -> RideStatus.PAYMENT_PENDING
+                RideStatus.CREATED.name -> RideStatus.CREATED
                 else -> null
             }
         }
