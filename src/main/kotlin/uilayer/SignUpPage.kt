@@ -1,16 +1,25 @@
 package uilayer
 
-import database.DbService
+import backend.Backend
 import library.*
 import library.OutputHandler.colorCoatedMessage
 import library.customenum.*
+<<<<<<< Updated upstream
 import modules.*
+=======
+import models.*
+>>>>>>> Stashed changes
 
-internal object SignUpPage {
+internal class SignUpPage() {
+    private lateinit var backend: Backend
     private var age: Int? = null
     lateinit var user: User
     lateinit var aadhaar: Aadhaar
 
+    fun injectBackend(backend: Backend) {
+        this.backend = backend
+
+    }
     private fun displayUserSignup(): User {
         lateinit var username: String
         lateinit var password: String
@@ -18,7 +27,7 @@ internal object SignUpPage {
         var response: Boolean
         while (true) {
             username = InputHandler.getString(3, 12, "Enter username")
-            response = DbService.isUserNameExist(username) // check userName already exist in database
+            response = backend.isUserNameExist(username) // check userName already exist in database
             if (LocalRegex.USERNAME_PATTERN.code.matches(username)) {
                 if (response) colorCoatedMessage("User name already exist", TextColor.YELLOW) else break
             } else colorCoatedMessage("Invalid Format Note:(cannot start with numbers, size 3-12, no space))", TextColor.YELLOW)
@@ -41,25 +50,22 @@ internal object SignUpPage {
         return User(username, password, name, age!!, phone)
     }
 
-    fun displayPassengerSignUp(): DbResponse {
+    fun displayPassengerSignUp(): User {
         age = InputHandler.getInt(15, 80, "Enter Your Age (15 - 80 only eligible)")
         user = displayUserSignup()
         aadhaar = gatherAadhaarData()
         val preferredVehicleType =
             InputHandler.getVehicleType("choose your preferred Vehicle type(SCOOTER/CLASSIC/SPORTS)")
-        val passenger =
-            Passenger(user.username, user.password, user.name, user.age, user.phone, aadhaar, preferredVehicleType)
-        return DbService.addNewPassenger(passenger)
+        return Passenger(user.username, user.password, user.name, user.age, user.phone, aadhaar, preferredVehicleType)
     }
 
 
-    fun displayDriverSignUp(): DbResponse {
+    fun displayDriverSignUp(): User {
         age = InputHandler.getInt(21, 40, "Enter Your Age (21 - 40 only eligible)")
         user= displayUserSignup()
         val license: License = gatherLicenseData()
         val bike = gatherBikeData()
-        val driver = Driver(user.username, user.password, user.name, user.age, user.phone, license, bike)
-        return DbService.addNewDriver(driver)
+        return Driver(user.username, user.password, user.name, user.age, user.phone, license, bike)
     }
     private fun gatherLicenseData(): License {
         var licenseNo: String
